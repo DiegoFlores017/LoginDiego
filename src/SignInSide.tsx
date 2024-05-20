@@ -14,7 +14,9 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Router, useNavigate } from 'react-router-dom';
 import { Formik, useFormik } from 'formik';
 import * as Yup from "yup";
-
+import { gapi } from 'gapi-script';
+import GoogleLogin from 'react-google-login';
+import { useEffect } from 'react';
 
 function Copyright(props: any) {
   return (
@@ -29,39 +31,53 @@ function Copyright(props: any) {
   );
 }
 
-// TODO remove, this demo shouldn't need to reset the theme.
+
 const defaultTheme = createTheme();
+ 
 
 
 
 export default function SignInSide() {
   const navigate = useNavigate();
-  //let valoresIniciales = {
-  //email = "",
-  //pssword = "",
-  //}
-  /*const enviarForm = (data) => {
-    console.log(data)
-  }*/
-  const {handleSubmit,handleChange, values, setFieldValue, errors} = useFormik({
+  const clientID = "88427881055-nfa39pm7ov21j9tk1m8k6375rlattlbd.apps.googleusercontent.com"
+  const { handleSubmit, handleChange, values, errors } = useFormik({
     initialValues: {
       email: "",
       password: "",
     },
-    validationSchema: Yup.object ({
-      email: Yup.string().required ("Debes ingresar un email"),
-      password: Yup.string().required ("Debes ingresar una contraseña"),
-      
+    validationSchema: Yup.object({
+      email: Yup.string()
+        .email("Ingrese un mail valido")
+        .required("Debes ingresar un email"),
+      password: Yup.string()
+       .min(6, "Ingrese una contraseña con 6 caracteres o mas")
+       .required("Debes ingresar una contraseña"),
+
     }),
     onSubmit: (data) => {
       console.log(data)
       navigate("/Holamundo")
     },
-});
+  });
+  useEffect(() => {
+    const start = () => {
+      gapi.auth2.init({
+        clientId: clientID,
+      })
+    }
+    gapi.load("client:auth2", start)
+  }, [])
 
-return (
+  const onSuccess = (response) => {
+    console.log(response)
+  }
+  const onFailure = () => {
+    console.log("algo salio mal..")
+  }
 
-  <ThemeProvider theme={defaultTheme}>
+  return (
+
+    <ThemeProvider theme={defaultTheme}>
       <Grid container component="main" sx={{ height: '100vh' }}>
         <CssBaseline />
         <Grid
@@ -106,7 +122,7 @@ return (
                 value={values.email}
                 error={!!errors.email}
                 helperText={errors.email}
-                autoFocus
+              //autoFocus
               />
               <TextField
                 margin="normal"
@@ -114,7 +130,7 @@ return (
                 fullWidth
                 name="password"
                 onChange={handleChange}
-                value = {values.password}
+                value={values.password}
                 error={!!errors.password}
                 helperText={errors.password}
                 label="Password"
@@ -146,6 +162,15 @@ return (
               >
                 Borrar
               </Button>
+              <div className='btn'>
+                <GoogleLogin
+                  clientId={clientID}
+                  onSuccess={onSuccess}
+                  onFailure={onFailure}
+                  cookiePolicy={"single_host_policy"}
+                />
+              </div>
+
               <Grid container>
                 <Grid item xs>
                   <Link href="#" variant="body2">
@@ -163,6 +188,6 @@ return (
           </Box>
         </Grid>
       </Grid>
-  </ThemeProvider>
-);
+    </ThemeProvider>
+  );
 }
